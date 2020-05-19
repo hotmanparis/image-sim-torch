@@ -6,7 +6,7 @@ import torchvision.transforms as transforms
 # convert data to torch.FloatTensor
 transform = transforms.ToTensor()
 
-train_data = datasets.ImageFolder(root = 'food_stitched_40k', transform = transform)
+train_data = datasets.ImageFolder(root = 'food_stitched', transform = transform)
 
 # Create training and test dataloaders
 
@@ -130,7 +130,7 @@ for epoch in range(1, n_epochs+1):
             print("Iteration: {} Loss: {}".format(it,100*loss))
         
         if it%100 == 0:            
-            torch.save(model.state_dict(), "/content/drive/My Drive/IML/task4/weights.pt")
+            torch.save(model.state_dict(), "/content/drive/My Drive/IML/task4/weights_allTraining.pt")
             
     # print avg training statistics 
     train_loss = train_loss/len(train_loader)
@@ -140,4 +140,4 @@ for epoch in range(1, n_epochs+1):
         ))
     
     print('Backup model')
-    torch.save(model.state_dict(), "/content/drive/My Drive/IML/task4/weights_epoch.pt")
+    torch.save(model.state_dict(), "/content/drive/My Drive/IML/task4/weights_epoch_allTraining.pt")
