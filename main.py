@@ -6,7 +6,7 @@ import torchvision.transforms as transforms
 # convert data to torch.FloatTensor
 transform = transforms.ToTensor()
 
-train_data = datasets.ImageFolder(root = 'food_stitched_40k', transform = transform)
+train_data = datasets.ImageFolder(root = 'food_stitched', transform = transform)
 
 # Create training and test dataloaders
 
