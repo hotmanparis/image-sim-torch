@@ -12,92 +12,76 @@ train_data = datasets.ImageFolder(root = 'food_stitched', transform = transform)
 
 num_workers = 0
 # how many samples per batch to load
-batch_size = 40
+batch_size = 20
 
 # prepare data loaders
-train_loader = torch.utils.data.DataLoader(train_data, batch_size=batch_size, num_workers=num_workers)
+train_loader = torch.utils.data.DataLoader(train_data, batch_size=batch_size, num_workers=num_workers, shuffle = True)
 #test_loader = torch.utils.data.DataLoader(test_data, batch_size=batch_size, num_workers=num_workers)
 
 import torch.nn as nn
 import torch.nn.functional as F
 
 # define the NN architecture
-class ConvAutoencoder(nn.Module):
+class TripletNetwork(nn.Module):
     def __init__(self):
-        super(ConvAutoencoder, self).__init__()
+        super(TripletNetwork, self).__init__()
         ## encoder layers ##
         # conv layer (depth from 1 --> 16), 3x3 kernels
-        self.conv1 = nn.Conv2d(3, 64, 4, stride = 2, padding=1)  
-        self.conv2 = nn.Conv2d(64, 64, 4, stride = 2, padding=1)
-        self.conv3 = nn.Conv2d(64, 128, 4, stride = 2, padding=1)
-        self.conv4 = nn.Conv2d(128, 256, 4, stride = 2, padding=1)
-        self.conv5 = nn.Conv2d(256, 512, 4, stride = 2, padding=1)
+        hdim = 16
+        bdim = 16
+        self.conv1 = nn.Conv2d(3, hdim, 3, padding=1)
+        self.conv2 = nn.Conv2d(hdim, hdim, 3, padding=1)
+        self.conv3 = nn.Conv2d(hdim, bdim, 3, padding=1)
+        # conv layer (depth from 16 --> 4), 3x3 kernels
+        self.convB = nn.Conv2d(bdim, 3, 3, padding=1)
         
-        #Bottleneck
-        self.conv6 = nn.Conv2d(512, 4000, 4, stride = 1)
-        self.dropout = nn.Dropout(p=0.25, inplace=False)
+        self.pool = nn.MaxPool2d(2, 2)
+        self.actvn = nn.PReLU()
         
-        ## decoder layers ##
-        ## a kernel of 2 and a stride of 2 will increase the spatial dims by 2
-        self.t_conv0 = nn.ConvTranspose2d(4000, 512, 4, stride=2)
-        self.t_conv1 = nn.ConvTranspose2d(512, 256, 4, stride=2, padding=1)
-        self.t_conv2 = nn.ConvTranspose2d(256, 128, 4, stride=2, padding=1)
-        self.t_conv3 = nn.ConvTranspose2d(128, 64, 4, stride=2, padding=1)
-        self.t_conv4 = nn.ConvTranspose2d(64, 64, 4, stride=2, padding=1)
-        self.t_conv5 = nn.ConvTranspose2d(64, 3, 4, stride=2, padding=1)
-        
-        # Activation
-        self.leakyRelu = torch.nn.LeakyReLU(negative_slope=0.2)
-        self.relu = nn.ReLU()
-        self.sigmoid = nn.Sigmoid()
-        #self.batchnorm = torch.nn.BatchNorm2d()
-
     def forward(self, x):
         ## encode ##
-        x = self.conv1(x)
-        x = self.leakyRelu(x)
-        x = self.conv2(x)
-        x = self.leakyRelu(x)
-        x = self.conv3(x)
-        x = self.leakyRelu(x)
-        x = self.conv4(x)
-        x = self.leakyRelu(x)
-        x = self.conv5(x)
-        x = self.leakyRelu(x)
+        # add hidden layers with relu activation function
+        # and maxpooling after
+        l = x[:,:,:,:128]
+        m = x[:,:,:,128:256]
+        r = x[:,:,:,256:]
         
-        ## botlleneck ##
-        x = self.conv6(x)
-        x = self.leakyRelu(x)
-        x = self.dropout(x)
+        l = self.actvn(self.conv1(l))
+        l = self.pool(l)
+        l = self.actvn(self.conv2(l))
+        l = self.pool(l)
+        l = self.actvn(self.conv3(l))
+        l = self.convB(l)
         
-        ## decode ##
-        x = self.t_conv0(x)
-        x = self.relu(x)
-        x = self.t_conv1(x)
-        x = self.relu(x)
-        x = self.t_conv2(x)
-        x = self.relu(x)
-        x = self.t_conv3(x)
-        x = self.relu(x)
-        x = self.t_conv4(x)
-        x = self.relu(x)
-        x = self.t_conv5(x)
-      
-        x = self.sigmoid(x)
-                
-        return x
+        m = self.actvn(self.conv1(m))
+        m = self.pool(m)
+        m = self.actvn(self.conv2(m))
+        m = self.pool(m)
+        m = self.actvn(self.conv3(m))
+        m = self.convB(m)
+        
+        r = self.actvn(self.conv1(r))
+        r = self.pool(r)
+        r = self.actvn(self.conv2(r))
+        r = self.pool(r)
+        r = self.actvn(self.conv3(r))
+        r = self.convB(r)
+        
+        l = torch.flatten(l, start_dim=1)
+        m = torch.flatten(m, start_dim=1)
+        r = torch.flatten(r, start_dim=1)
 
-# initialize the NN
-model = ConvAutoencoder()
+        return l, m, r
 
-# specify loss function
-criterion = nn.MSELoss()
+# Initialize model    
+model = TripletNetwork()
+model.cuda()
 
 # specify loss function
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
 # number of epochs to train the model
-n_epochs = 100
+n_epochs = 10000
 
 for epoch in range(1, n_epochs+1):
     # monitor training loss
@@ -111,12 +95,17 @@ for epoch in range(1, n_epochs+1):
         # _ stands in for labels, here
         # no need to flatten images
         images, _ = data
+        images = images.to('cuda')
         # clear the gradients of all optimized variables
         optimizer.zero_grad()
         # forward pass: compute predicted outputs by passing inputs to the model
-        outputs = model(images[:,:,:,:128])
-        # calculate the loss
-        loss = 0.6*criterion(outputs, images[:,:,:,128:256]) / 0.4*criterion(outputs, images[:,:,:,256:])
+        l, m, r = model(images)
+
+        # loss
+        l2_plus = torch.mean(torch.square(l-m),dim=1) # size = batch_size,
+        l2_min = torch.mean(torch.square(l-r),dim=1) # size = batch_size,
+        loss = torch.mean(F.relu(l2_plus - l2_min + 0.2))
+
         # backward pass: compute gradient of the loss with respect to model parameters
         loss.backward()
         # perform a single optimization step (parameter update)
@@ -126,12 +115,13 @@ for epoch in range(1, n_epochs+1):
         
         it = it + 1
         
-        if it%20 == 0:
+        if it%100 == 0:
             print("Iteration: {} Loss: {}".format(it,100*loss))
-        
-        if it%100 == 0:            
-            torch.save(model.state_dict(), "/content/drive/My Drive/IML/task4/all_div.pt")
-            
+
+        if it%100 == 0:
+            #print('Saving model')
+            torch.save(model.state_dict(), "/content/drive/My Drive/IML/task4/triplet_all_colab.pt")
+          
     # print avg training statistics 
     train_loss = train_loss/len(train_loader)
     print('Epoch: {} \tTraining Loss: {:.6f}'.format(
@@ -139,5 +129,5 @@ for epoch in range(1, n_epochs+1):
         100*train_loss
         ))
     
-    print('Backup model')
-    torch.save(model.state_dict(), "/content/drive/My Drive/IML/task4/all_div_e.pt")
+    print('Saving model')
+    torch.save(model.state_dict(), "/content/drive/My Drive/IML/task4/triplet_all_colab_epoch.pt")
