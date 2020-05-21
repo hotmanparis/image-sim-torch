@@ -175,7 +175,7 @@ for epoch in range(1, n_epochs+1):
 
         if it%100 == 0:
             #print('Saving model')
-            torch.save(model.state_dict(), "/content/drive/My Drive/IML/task4/triplet_all_colab.pt")
+            torch.save(model.state_dict(), "/content/drive/My Drive/IML/task4/alexnet.pt")
           
     # print avg training statistics 
     train_loss = train_loss/len(train_loader)
@@ -185,4 +185,4 @@ for epoch in range(1, n_epochs+1):
         ))
     
     print('Saving model')
-    torch.save(model.state_dict(), "/content/drive/My Drive/IML/task4/triplet_all_colab_epoch.pt")
+    torch.save(model.state_dict(), "/content/drive/My Drive/IML/task4/alexnet_epoch.pt")
