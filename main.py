@@ -77,7 +77,7 @@ class TripletAlexNet(nn.Module):
     def __init__(self):
         super(TripletAlexNet, self).__init__()
 
-        div = 2
+        div = 4
 
         self.features = nn.Sequential(
             nn.Conv2d(3, int(64/div), kernel_size=11, stride=4, padding=2),
@@ -97,10 +97,10 @@ class TripletAlexNet(nn.Module):
         self.avgpool = nn.AdaptiveAvgPool2d((6, 6))
         self.fcn = nn.Sequential(
             nn.Dropout(),
-            nn.Linear(int(256/div) * 6 * 6, 4096),
+            nn.Linear(int(256/div) * 6 * 6, int(4096/div)),
             nn.PReLU(),
             nn.Dropout(),
-            nn.Linear(4096, 4096)
+            nn.Linear(int(4096/div), int(4096/div))
             #nn.ReLU(inplace=True),
             #nn.Linear(4096, num_classes),
         )
