@@ -100,7 +100,7 @@ class TripletAlexNet(nn.Module):
             nn.Linear(int(256/div) * 6 * 6, int(4096/div*2)),
             nn.ReLU(),
             nn.Dropout(),
-            nn.Linear(int(4096/div), int(4096/div*2))
+            nn.Linear(int(4096/div*2), int(4096/div*2))
             #nn.ReLU(inplace=True),
             #nn.Linear(4096, num_classes),
         )
