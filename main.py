@@ -80,27 +80,27 @@ class TripletAlexNet(nn.Module):
         div = 4
 
         self.features = nn.Sequential(
-            nn.Conv2d(3, int(64/div), kernel_size=11, stride=4, padding=2),
-            nn.PReLU(),
-            nn.MaxPool2d(kernel_size=3, stride=2),
-            nn.Conv2d(int(64/div), int(192/div), kernel_size=5, padding=2),
-            nn.PReLU(),
+            nn.Conv2d(3, int(64/div), kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d((2,2)),
+            nn.Conv2d(int(64/div), int(192/div), kernel_size=3, padding=1),
+            nn.ReLU(),
             nn.MaxPool2d(kernel_size=3, stride=2),
             nn.Conv2d(int(192/div), int(384/div), kernel_size=3, padding=1),
-            nn.PReLU(),
+            nn.ReLU(),
             nn.Conv2d(int(384/div), int(256/div), kernel_size=3, padding=1),
-            nn.PReLU(),
+            nn.ReLU(),
             nn.Conv2d(int(256/div), int(256/div), kernel_size=3, padding=1),
-            nn.PReLU(),
+            nn.ReLU(),
             nn.MaxPool2d(kernel_size=3, stride=2),
         )
         self.avgpool = nn.AdaptiveAvgPool2d((6, 6))
         self.fcn = nn.Sequential(
             nn.Dropout(),
-            nn.Linear(int(256/div) * 6 * 6, int(4096/div)),
-            nn.PReLU(),
+            nn.Linear(int(256/div) * 6 * 6, int(4096/div*2)),
+            nn.ReLU(),
             nn.Dropout(),
-            nn.Linear(int(4096/div), int(4096/div))
+            nn.Linear(int(4096/div), int(4096/div*2))
             #nn.ReLU(inplace=True),
             #nn.Linear(4096, num_classes),
         )
@@ -159,7 +159,7 @@ for epoch in range(1, n_epochs+1):
         # loss
         l2_plus = torch.mean(torch.square(l-m),dim=1) # size = batch_size,
         l2_min = torch.mean(torch.square(l-r),dim=1) # size = batch_size,
-        loss = torch.mean(F.relu(l2_plus - l2_min + 0.25))
+        loss = torch.mean(F.relu(l2_plus - l2_min + 0.22))
 
         # backward pass: compute gradient of the loss with respect to model parameters
         loss.backward()
@@ -175,7 +175,7 @@ for epoch in range(1, n_epochs+1):
 
         if it%1000 == 0:
             #print('Saving model')
-            torch.save(model.state_dict(), "/content/drive/My Drive/IML/task4/alexnet.pt")
+            torch.save(model.state_dict(), "/content/drive/My Drive/IML/task4/alexnet_2.pt")
           
     # print avg training statistics 
     train_loss = train_loss/len(train_loader)
@@ -185,4 +185,4 @@ for epoch in range(1, n_epochs+1):
         ))
     
     print('Saving model')
-    torch.save(model.state_dict(), "/content/drive/My Drive/IML/task4/alexnet_epoch.pt")
+    torch.save(model.state_dict(), "/content/drive/My Drive/IML/task4/alexnet_2_epoch.pt")
