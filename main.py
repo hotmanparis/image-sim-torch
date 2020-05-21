@@ -152,32 +152,27 @@ class TripletAlexNet(nn.Module):
     def __init__(self):
         super(TripletAlexNet, self).__init__()
 
-        div = 2
+        div = 4
 
         self.features = nn.Sequential(
             nn.Conv2d(3, int(64/div), kernel_size=3, padding=1),
             nn.ReLU(),
             nn.MaxPool2d((2,2)),
-            nn.Dropout(),
             nn.Conv2d(int(64/div), int(192/div), kernel_size=3, padding=1),
             nn.ReLU(),
             nn.MaxPool2d((2,2)),
-            nn.Dropout(),
             nn.Conv2d(int(192/div), int(384/div), kernel_size=3, padding=1),
             nn.ReLU(),
             nn.MaxPool2d((2,2)),
-            nn.Dropout(),
             nn.Conv2d(int(384/div), int(256/div), kernel_size=3, padding=1),
             nn.ReLU(),
-            nn.Dropout(),
             nn.Conv2d(int(256/div), int(256/div), kernel_size=3, padding=1),
             nn.ReLU(),
-            nn.Dropout()
         )
         self.avgpool = nn.AdaptiveMaxPool2d((8, 8))
         self.fcn = nn.Sequential(
             #nn.Dropout(),
-            nn.Linear(int(256/div) * 8 * 8, int(4096/div*4))
+            nn.Linear(int(256/div) * 8 * 8, int(4096/div*2))
             #nn.ReLU(),
             #nn.Dropout(),
             #nn.Linear(int(4096/div*2), int(4096/div*2))
@@ -209,8 +204,8 @@ class TripletAlexNet(nn.Module):
 
 # Initialize model    
 #model = TripletNetwork()
-#model = TripletNetwork2()
-model = TripletAlexNet()
+model = TripletNetwork2()
+#model = TripletAlexNet()
 model.cuda()
 
 # specify loss function
@@ -256,7 +251,7 @@ for epoch in range(1, n_epochs+1):
 
         if it%1000 == 0:
             #print('Saving model')
-            torch.save(model.state_dict(), "/content/drive/My Drive/IML/task4/alexnet_dropout.pt")
+            torch.save(model.state_dict(), "/content/drive/My Drive/IML/task4/tripletnet2.pt")
           
     # print avg training statistics 
     train_loss = train_loss/len(train_loader)
@@ -266,4 +261,4 @@ for epoch in range(1, n_epochs+1):
         ))
     
     print('Saving model')
-    torch.save(model.state_dict(), "/content/drive/My Drive/IML/task4/alexnet_dropout_epoch.pt")
+    torch.save(model.state_dict(), "/content/drive/My Drive/IML/task4/tripletnet2_epoch.pt")
