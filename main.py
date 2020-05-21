@@ -93,7 +93,6 @@ class TripletAlexNet(nn.Module):
             nn.ReLU(),
             nn.Conv2d(int(256/div), int(256/div), kernel_size=3, padding=1),
             nn.ReLU(),
-            nn.MaxPool2d(kernel_size=3, stride=2),
         )
         self.avgpool = nn.AdaptiveMaxPool2d((8, 8))
         self.fcn = nn.Sequential(
