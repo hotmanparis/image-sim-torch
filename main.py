@@ -170,10 +170,10 @@ for epoch in range(1, n_epochs+1):
         
         it = it + 1
         
-        if it%100 == 0:
+        if it%200 == 0:
             print("Iteration: {} Loss: {}".format(it,100*loss))
 
-        if it%100 == 0:
+        if it%1000 == 0:
             #print('Saving model')
             torch.save(model.state_dict(), "/content/drive/My Drive/IML/task4/alexnet.pt")
           
